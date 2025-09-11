@@ -1,0 +1,37 @@
+name: flutter_google_map
+description: "A new Flutter project."
+ 
+ 
+publish_to: 'none'  
+ 
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.9.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  google_maps_flutter: ^2.13.1
+  location: ^8.0.1
+  flutter_polyline_points: ^3.0.1
+  get: ^4.7.2
+  geolocator: ^14.0.2
+  custom_info_window: ^1.0.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+   
+   
+  flutter_lints: ^5.0.0
+ 
+flutter:
+  uses-material-design: true
+  assets: 
+    - assets/images/current_location.png
+    - assets/images/destination_location.png
+    - assets/images/source_location.png
+
