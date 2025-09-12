@@ -254,7 +254,7 @@ class _GoogleMapFlutterState extends State<GoogleMapFlutter> {
   Future<List<LatLng>> getPolyLinePoint() async {
     List<LatLng> coordinates = [];
     PolylinePoints polylinePoints = PolylinePoints(
-      apiKey: "AIzaSyDefMWW9rHDztsRu8SGvrxwszlXen9jI7E",
+      apiKey: "THE_API_KEY",
     );
 
     PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
