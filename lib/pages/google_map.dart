@@ -287,3 +287,4 @@ class _GoogleMapFlutterState extends State<GoogleMapFlutter> {
     });
   }
 }
+
