@@ -13,6 +13,10 @@ class GoogleMapFlutter extends StatefulWidget {
 late GoogleMapController googleMapController;
 
 class _GoogleMapFlutterState extends State<GoogleMapFlutter> {
+
+  final TextEditingController sourceController = TextEditingController();
+  final TextEditingController directionController = TextEditingController();
+
   BitmapDescriptor customIcon = BitmapDescriptor.defaultMarker;
 
   final List<LatLng> points = [
@@ -44,12 +48,12 @@ class _GoogleMapFlutterState extends State<GoogleMapFlutter> {
 
   @override
   void initState() {
-    getPolyLinePoint().then(
-      (locationsPoints) => {
-        print(locationsPoints),
-        _createPolyline(locationsPoints),
-      },
-    );
+    // getPolyLinePoint().then(
+    //   (locationsPoints) => {
+    //     print(locationsPoints),
+    //     _createPolyline(locationsPoints),
+    //   },
+    // );
     _customIcon();
     displayMarker();
     super.initState();
@@ -176,6 +180,7 @@ class _GoogleMapFlutterState extends State<GoogleMapFlutter> {
                                 ),
                               ),
                             );
+                            // googleMapController.moveCamera(CameraUpdate.newCameraPosition(CameraPosition(target: LatLng(value.latitude, value.longitude), zoom: 14)));
                           },
                         ),
                       );
@@ -210,6 +215,134 @@ class _GoogleMapFlutterState extends State<GoogleMapFlutter> {
                     ),
                   ),
                 ),
+              ),
+            ),
+          ),
+
+          Positioned(
+            right: 14,
+            bottom: 105,
+            child: SizedBox(
+              width: 56,
+              height: 56,
+              child: IconButton(
+                style: IconButton.styleFrom(
+                  iconSize: 26,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  backgroundColor: Colors.white,
+                ),
+                icon: Icon(Icons.directions),
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) {
+                      return AlertDialog(
+                        title: Text('Set Directions'),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          spacing: 10,
+                          children: [
+                            TextFormField(
+                              controller: sourceController,
+                              decoration: InputDecoration(
+                                label: Text('Source'),
+                                hint: Text('ex. 11.556374,104.928210'),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                              ),
+                            ),
+                            TextFormField(
+                              controller: directionController,
+                              decoration: InputDecoration(
+                                label: Text('Destination'),
+                                hint: Text('ex. 11.572272,104.925588'),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                              ),
+                            ),
+
+                          ],
+                        ),
+                        actions: [
+                          
+                          TextButton(
+                            onPressed: (){
+                              Navigator.pop(context);
+                            }, 
+                            child: Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () async{
+
+                              final sourceText = sourceController.text.trim();
+                              final destinationText = directionController.text.trim();
+                              
+                              final srcPart = sourceText.split(',');
+                              final dstPart = destinationText.split(',');
+
+                              final srcLat = double.parse(srcPart[0]);
+                              final srcLong = double.parse(srcPart[1]);
+                              final dstLat = double.parse(dstPart[0]);
+                              final dstLong = double.parse(dstPart[1]);
+
+                              final LatLng source = LatLng(srcLat, srcLong);
+                              final LatLng destination = LatLng(dstLat, dstLong);
+
+                              print("Source: $source");
+                              print("Destination: $destination");
+
+                              setState(() {
+                                markers.removeWhere((marker)=> marker.markerId.value == 'source' || marker.markerId.value == 'destination');
+                                markers.add(
+                                  Marker(
+                                    markerId: MarkerId('source'),
+                                    position: source,
+                                    draggable: true,
+                                  ),
+                                );
+                                markers.add(
+                                  Marker(
+                                    markerId: MarkerId('destination'),
+                                    position: destination,
+                                    draggable: true,
+                                  ),
+                                );
+                              });
+
+                              // Fit camera to show both pins nicely
+                              final southWest = LatLng(
+                                srcLat < dstLat ? srcLat : dstLat,
+                                srcLong < dstLong ? srcLong : dstLong,
+                              );
+                              final northEast = LatLng(
+                                srcLat > dstLat ? srcLat : dstLat,
+                                srcLong > dstLong ? srcLong : dstLong,
+                              );
+                              final bounds = LatLngBounds(southwest: southWest, northeast: northEast);
+
+                              // Add some padding around bounds
+                              await googleMapController
+                                  .animateCamera(CameraUpdate.newLatLngBounds(bounds, 80));
+
+                              final PointLatLng origin = PointLatLng(srcLat, srcLong);
+                              final PointLatLng goal = PointLatLng(dstLat, dstLong);
+                              getPolyLinePoint(origin, goal).then((value) => {_createPolyline(value)});
+                              
+
+                              Navigator.pop(context);
+
+                            },
+                            child: Text('Done'),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
               ),
             ),
           ),
@@ -251,7 +384,7 @@ class _GoogleMapFlutterState extends State<GoogleMapFlutter> {
     );
   }
 
-  Future<List<LatLng>> getPolyLinePoint() async {
+  Future<List<LatLng>> getPolyLinePoint(PointLatLng source, PointLatLng destination) async {
     List<LatLng> coordinates = [];
     PolylinePoints polylinePoints = PolylinePoints(
       apiKey: "THE_API_KEY",
@@ -259,8 +392,10 @@ class _GoogleMapFlutterState extends State<GoogleMapFlutter> {
 
     PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
       request: PolylineRequest(
-        origin: PointLatLng(11.563894, 104.931235),
-        destination: PointLatLng(11.576129, 104.923085),
+        origin: source,
+        destination: destination,
+        // origin: PointLatLng(11.563894, 104.931235),
+        // destination: PointLatLng(11.576129, 104.923085),
         mode: TravelMode.driving,
       ),
     );
